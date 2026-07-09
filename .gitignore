@@ -1,0 +1,8 @@
+# Python
+__pycache__/
+*.pyc
+
+# Aufgezeichnete Sessions & generierte Berichte (lokal, nicht versionieren)
+*.csv
+bericht*.md
+session*.md

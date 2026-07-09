@@ -10,8 +10,8 @@ Die Idee: Nicht *„hier ist das beste Setup"*, sondern ein **Ingenieur**, der
 3. eine Runde mit dir „mitfährt", die Daten misst,
 4. und dir **erklärt, warum** — und dann *eine* gezielte Änderung vorschlägt, die du selbst verstehst.
 
-> **Status:** Phase 1 — Konzept & Lern-Dokumentation. Der Code (UDP-Empfänger, Parser,
-> Debrief-Analyse) folgt in Phase 2. Siehe [Roadmap](#roadmap).
+> **Status:** Phase 2 lauffähig — die lokalen Tools (UDP-Empfänger, Parser, Debrief-Analyse)
+> stehen in [`tools/`](tools/). Der Ingenieur-Dialog läuft über Claude. Siehe [Roadmap](#roadmap).
 
 ---
 
@@ -56,7 +56,12 @@ Lies die Dokumente in dieser Reihenfolge:
    Der Ingenieur-Prozess: Symptom → Telemetrie → Diagnose → *eine* Änderung → nachmessen.
 5. **[`docs/05-diagnose-playbook.md`](docs/05-diagnose-playbook.md)**
    Konkrete Fälle mit ihrer „Telemetrie-Signatur" und dem passenden Eingriff.
-6. **[`docs/glossar.md`](docs/glossar.md)** — Begriffe zum Nachschlagen.
+6. **[`docs/06-ingenieur-bericht.md`](docs/06-ingenieur-bericht.md)**
+   Wie du den Tool-Bericht hier mit dem Ingenieur (Claude) besprichst.
+7. **[`docs/glossar.md`](docs/glossar.md)** — Begriffe zum Nachschlagen.
+
+**Die Tools:** [`tools/`](tools/) — `sniff.py` (Datentest), `record.py` (Aufnahme),
+`debrief.py` (Analyse). Bedienung in [`tools/README.md`](tools/README.md).
 
 ---
 
@@ -80,13 +85,17 @@ Lies die Dokumente in dieser Reihenfolge:
 
 ## Roadmap
 
-- [x] **Phase 1 — Konzept & Doku** (dieses Repo, aktuell)
-- [ ] **Phase 2 — Telemetrie-Empfänger:** Python-UDP-Listener + Parser für das FH6-„Dash"-Format,
-      der die Rohpakete in lesbare Werte übersetzt und eine Runde aufzeichnet (CSV).
-- [ ] **Phase 3 — Debrief-Analyse:** Aus der Aufzeichnung automatisch Balance, Reifentemps,
-      Federweg-Auslastung, Bremsblockierer usw. berechnen und als Ingenieurs-Report ausgeben.
-- [ ] **Phase 4 — Dialog-Ingenieur:** Symptom-Abfrage → gezielte Auswertung → Änderungsvorschlag
-      mit Begründung.
+- [x] **Phase 1 — Konzept & Doku** (`docs/`)
+- [x] **Phase 2 — Telemetrie-Empfänger:** Python-UDP-Listener + Parser für das „Dash"-Format,
+      der die Rohpakete in lesbare Werte übersetzt und eine Runde aufzeichnet (`tools/record.py`).
+- [x] **Phase 3 — Debrief-Analyse:** Aus der Aufzeichnung Balance, Reifentemps,
+      Federweg-Auslastung, Blockierer usw. berechnen und als Ingenieurs-Report ausgeben (`tools/debrief.py`).
+- [x] **Phase 4 — Dialog-Ingenieur:** Bericht → Symptom → gezielte Deutung → eine begründete
+      Änderung. Läuft über Claude (siehe `docs/06`).
+- [ ] **Nächste Schritte / offen:**
+  - Byte-Offsets an **echten FH6-Paketen** verifizieren (`sniff.py`), Schwellen in `debrief.py` kalibrieren
+  - Optional: Vorher/Nachher-Vergleich zweier CSVs direkt im Tool
+  - Optional: lokales Web-Dashboard mit Grafiken
 
 ---
 
