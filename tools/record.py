@@ -24,10 +24,12 @@ import forza_format as ff
 # Diese Felder landen in der CSV (eine Spalte je Eintrag).
 RECORD_FIELDS = [
     "TimestampMS", "IsRaceOn", "CurrentRaceTime", "LapNumber", "CurrentLap",
-    "Speed", "CurrentEngineRpm", "EngineMaxRpm", "Gear",
+    "Speed", "CurrentEngineRpm", "EngineMaxRpm", "EngineIdleRpm",
+    "Power", "Torque", "Gear",
     "Accel", "Brake", "Steer", "HandBrake",
     "AccelerationX", "AccelerationY", "AccelerationZ",
     "AngularVelocityY",
+    "PositionX", "PositionY", "PositionZ",
     "DrivetrainType", "CarPerformanceIndex", "CarClass",
     # Rad-Felder
     *[f"NormSuspTravel{w}" for w in ("FL", "FR", "RL", "RR")],
