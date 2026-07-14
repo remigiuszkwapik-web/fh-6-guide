@@ -260,6 +260,7 @@ def format_report(a):
 - Wank-Delta (L/R):      vorne `{a['roll_front']:.3f}` · hinten `{a['roll_rear']:.3f}`
 - Traktions-Events (Durchdrehen am Gas): **{a['spin_events']}**  (**{spin_pm:.0f}/min**)
 - Blockier-Events:  FL {a['lock_events']['FL']} · FR {a['lock_events']['FR']} · RL {a['lock_events']['RL']} · RR {a['lock_events']['RR']}  (gesamt **{lock_pm:.0f}/min**, davon Front {lock_front})
+  - _Hinweis: Bei aktivem ABS sind das meist ABS-Regeleingriffe, KEIN echtes Blockieren — dann ignorieren._
 
 ## Automatischer Erst-Vorschlag (1 Änderung)
 **→ {action}**
