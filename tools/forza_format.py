@@ -55,33 +55,35 @@ FIELDS = [
     ("CarPerformanceIndex", 220, "i"),
     ("DrivetrainType", 224, "i"),   # 0=FWD, 1=RWD, 2=AWD
     ("NumCylinders", 228, "i"),
-    # Teil B — "Dash" (ab Byte 232): erweiterte Daten
-    ("PositionX", 232, "f"), ("PositionY", 236, "f"), ("PositionZ", 240, "f"),
-    ("Speed", 244, "f"),      # m/s
-    ("Power", 248, "f"),      # W
-    ("Torque", 252, "f"),     # Nm
-    *_wheel_fields("TireTemp", 256),  # °F
-    ("Boost", 272, "f"),
-    ("Fuel", 276, "f"),
-    ("DistanceTraveled", 280, "f"),
-    ("BestLap", 284, "f"), ("LastLap", 288, "f"),
-    ("CurrentLap", 292, "f"), ("CurrentRaceTime", 296, "f"),
-    ("LapNumber", 300, "H"),
-    ("RacePosition", 302, "B"),
-    ("Accel", 303, "B"), ("Brake", 304, "B"), ("Clutch", 305, "B"),
-    ("HandBrake", 306, "B"), ("Gear", 307, "B"),
-    ("Steer", 308, "b"),
-    ("NormalizedDrivingLine", 309, "b"),
-    ("NormalizedAIBrakeDifference", 310, "b"),
-    # Teil C — nur FH5 (Paket 331 Bytes): am Ende angehängt
-    *_wheel_fields("TireWear", 311),
-    ("TrackOrdinal", 327, "i"),
+    # Teil B — "Dash" (ab Byte 232): FH6-Layout (324-Byte-Paket), per dump.py ermittelt.
+    # ⚠️ Gegenüber FH5 VERSCHOBEN: FH6 hat bei Byte 232 rund 12 Byte eingefügt, deshalb
+    #    liegen Speed/Reifentemps/Gang später als im FH5-Format.
+    ("_Reserved232", 232, "i"),   # unbekanntes FH6-Feld (Wert ~17), noch nicht identifiziert
+    ("PositionX", 244, "f"), ("PositionY", 248, "f"), ("PositionZ", 252, "f"),
+    ("Speed", 256, "f"),      # m/s   — verifiziert (0 im Stand)
+    ("Power", 260, "f"),      # W
+    ("Torque", 264, "f"),     # Nm
+    *_wheel_fields("TireTemp", 268),  # °F — verifiziert (~65°F kalt im Stand)
+    ("Boost", 284, "f"),
+    ("Fuel", 288, "f"),               # 0..1 — verifiziert (1.0 = voll)
+    # Runden-/Strecken-Felder: Offsets VORLÄUFIG (im Stand 0 bzw. Distanz), später prüfen:
+    ("BestLap", 292, "f"), ("LastLap", 296, "f"),
+    ("CurrentLap", 300, "f"), ("CurrentRaceTime", 304, "f"),
+    ("DistanceTraveled", 308, "f"),
+    ("LapNumber", 312, "H"),
+    ("RacePosition", 314, "B"),
+    ("Accel", 315, "B"), ("Brake", 316, "B"), ("Clutch", 317, "B"),
+    ("HandBrake", 318, "B"), ("Gear", 319, "B"),   # Gear-Byte @319 verifiziert (=1 im Stand)
+    ("Steer", 320, "b"),
+    ("NormalizedDrivingLine", 321, "b"),
+    ("NormalizedAIBrakeDifference", 322, "b"),
 ]
 
 # Bekannte Paketgrößen → Formatname (zur Diagnose)
 KNOWN_SIZES = {
     232: "Sled (V1, keine Reifentemps/Runden!)",
     311: "Dash (V2, FM7/FH4)",
+    324: "Dash (FH6)",
     331: "Dash (V2, FH5 inkl. TireWear/TrackOrdinal)",
 }
 
