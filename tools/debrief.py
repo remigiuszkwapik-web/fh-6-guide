@@ -131,6 +131,12 @@ def analyze(rows):
                   fnum(r, f"TireSlipRatio{w}") < LOCK_SLIP) for r in rows]
         lock_events[w] = count_rising_edges(flags)
 
+    # Session-Dauer (für faire "pro Minute"-Normierung verschieden langer Fahrten)
+    ts = [fnum(r, "TimestampMS") for r in rows if r.get("TimestampMS")]
+    duration_s = (max(ts) - min(ts)) / 1000.0 if len(ts) >= 2 else 0.0
+    if duration_s <= 0:
+        duration_s = len(rows) / 60.0  # Fallback: ~60 Hz annehmen
+
     # Rundenzeiten aus LapNumber-Wechseln (grob)
     laps = []
     last_num, last_time = None, None
@@ -150,6 +156,7 @@ def analyze(rows):
         temps=temps, bottom_front=bottom_front, bottom_rear=bottom_rear,
         roll_front=roll_front, roll_rear=roll_rear,
         spin_events=spin_events, lock_events=lock_events, laps=laps,
+        duration_s=duration_s,
     )
 
 
@@ -227,9 +234,16 @@ def format_report(a):
     action, reason = suggest(a)
     laptxt = ("  ".join(f"{l:.2f}s" for l in a["laps"]) if a["laps"] else "—")
 
+    dur = a["duration_s"]
+    per_min = (60.0 / dur) if dur > 0 else 0.0          # Faktor: Events × per_min = Events/Minute
+    spin_pm = a["spin_events"] * per_min
+    lock_total = sum(a["lock_events"].values())
+    lock_front = a["lock_events"]["FL"] + a["lock_events"]["FR"]
+    lock_pm = lock_total * per_min
+
     return f"""# DEBRIEF-BERICHT (FH6)
 
-**Auto:** {a['drivetrain']} · PI {a['pi']} · {a['n']} Samples · Runden: {laptxt}
+**Auto:** {a['drivetrain']} · PI {a['pi']} · {a['n']} Samples · {dur:.0f}s · Runden: {laptxt}
 
 ## Balance (Schräglauf vorne − hinten, roh; + = Untersteuern)
 - gesamt:   `{a['bal_all']:+.3f}`  → **{_bal_word(a['bal_all'])}**
@@ -244,8 +258,8 @@ def format_report(a):
 ## Fahrwerk & Traktion
 - Federweg am Anschlag:  vorne **{a['bottom_front']:.0f}%** · hinten **{a['bottom_rear']:.0f}%**
 - Wank-Delta (L/R):      vorne `{a['roll_front']:.3f}` · hinten `{a['roll_rear']:.3f}`
-- Traktions-Events (Durchdrehen am Gas): **{a['spin_events']}**
-- Blockier-Events:  FL {a['lock_events']['FL']} · FR {a['lock_events']['FR']} · RL {a['lock_events']['RL']} · RR {a['lock_events']['RR']}
+- Traktions-Events (Durchdrehen am Gas): **{a['spin_events']}**  (**{spin_pm:.0f}/min**)
+- Blockier-Events:  FL {a['lock_events']['FL']} · FR {a['lock_events']['FR']} · RL {a['lock_events']['RL']} · RR {a['lock_events']['RR']}  (gesamt **{lock_pm:.0f}/min**, davon Front {lock_front})
 
 ## Automatischer Erst-Vorschlag (1 Änderung)
 **→ {action}**
