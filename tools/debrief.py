@@ -23,9 +23,27 @@ macht der Ingenieur im Dialog mit dir.
 
 import argparse
 import csv
+import json
+import os
 import statistics as st
 
 import forza_format as ff
+
+_CARS_DB = os.path.join(os.path.dirname(__file__), "cars.json")
+
+
+def car_label(ordinal):
+    """Name (falls in cars.json hinterlegt) + ID; sonst nur ID/unbekannt."""
+    if ordinal is None:
+        return "unbekannt (alte Aufnahme ohne CarOrdinal)"
+    name = None
+    if os.path.exists(_CARS_DB):
+        try:
+            with open(_CARS_DB, encoding="utf-8") as fh:
+                name = json.load(fh).get(str(ordinal))
+        except (OSError, ValueError):
+            pass
+    return f"{name} (ID {ordinal})" if name else f"ID {ordinal} (Name mit carinfo.py setzen)"
 
 WHEELS = ("FL", "FR", "RL", "RR")
 
@@ -179,6 +197,7 @@ def analyze(rows):
         roll_front=roll_front, roll_rear=roll_rear,
         spin_events=spin_events, lock_events=lock_events, laps=laps,
         duration_s=duration_s, inner_spin=inner_spin, outer_spin=outer_spin,
+        car_ordinal=(int(fnum(rows[0], "CarOrdinal")) if rows[0].get("CarOrdinal") else None),
     )
 
 
@@ -280,7 +299,7 @@ def format_report(a):
 
     return f"""# DEBRIEF-BERICHT (FH6)
 
-**Auto:** {a['drivetrain']} · PI {a['pi']} · {a['n']} Samples · {dur:.0f}s · Runden: {laptxt}
+**Auto:** {car_label(a['car_ordinal'])} · {a['drivetrain']} · PI {a['pi']} · {a['n']} Samples · {dur:.0f}s · Runden: {laptxt}
 
 ## Balance (Schräglauf vorne − hinten, roh; + = Untersteuern)
 - gesamt:   `{a['bal_all']:+.3f}`  → **{_bal_word(a['bal_all'])}**

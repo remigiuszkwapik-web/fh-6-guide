@@ -30,7 +30,7 @@ RECORD_FIELDS = [
     "AccelerationX", "AccelerationY", "AccelerationZ",
     "AngularVelocityY",
     "PositionX", "PositionY", "PositionZ",
-    "DrivetrainType", "CarPerformanceIndex", "CarClass",
+    "CarOrdinal", "DrivetrainType", "CarPerformanceIndex", "CarClass", "NumCylinders",
     # Rad-Felder
     *[f"NormSuspTravel{w}" for w in ("FL", "FR", "RL", "RR")],
     *[f"TireSlipRatio{w}" for w in ("FL", "FR", "RL", "RR")],
