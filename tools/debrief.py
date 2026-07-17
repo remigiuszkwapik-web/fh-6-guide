@@ -124,6 +124,11 @@ def analyze(rows):
     bottom_front = bottom_pct(("FL", "FR"))
     bottom_rear = bottom_pct(("RL", "RR"))
 
+    # Nässe-Erkennung: Anteil Samples mit Wasser unter mindestens einem Rad
+    puddle_hits = sum(1 for r in rows
+                      if max(fnum(r, f"WheelInPuddle{w}") for w in WHEELS) > 0.05)
+    wet_pct = 100.0 * puddle_hits / len(rows)
+
     # Wank-Delta (|links − rechts|) je Achse, nur in Kurven
     def roll_delta(left, right):
         if not corner:
@@ -198,7 +203,18 @@ def analyze(rows):
         spin_events=spin_events, lock_events=lock_events, laps=laps,
         duration_s=duration_s, inner_spin=inner_spin, outer_spin=outer_spin,
         car_ordinal=(int(fnum(rows[0], "CarOrdinal")) if rows[0].get("CarOrdinal") else None),
+        wet_pct=wet_pct,
     )
+
+
+def _wet_line(wet_pct):
+    """Nässe-Warnung für den Berichtskopf."""
+    if wet_pct >= 40:
+        return (f"**🌧️ NASS-Fahrt ({wet_pct:.0f}% im Wasser)** — eigenes Regen-Setup nötig, "
+                "NICHT mit Trockendaten vergleichen!")
+    if wet_pct >= 3:
+        return f"⚠️ Teilweise nass ({wet_pct:.0f}% im Wasser) — Grip-Werte mit Vorsicht deuten."
+    return "_Trocken._"
 
 
 def _bal_word(b):
@@ -300,6 +316,7 @@ def format_report(a):
     return f"""# DEBRIEF-BERICHT (FH6)
 
 **Auto:** {car_label(a['car_ordinal'])} · {a['drivetrain']} · PI {a['pi']} · {a['n']} Samples · {dur:.0f}s · Runden: {laptxt}
+{_wet_line(a['wet_pct'])}
 
 ## Balance (Schräglauf vorne − hinten, roh; + = Untersteuern)
 - gesamt:   `{a['bal_all']:+.3f}`  → **{_bal_word(a['bal_all'])}**

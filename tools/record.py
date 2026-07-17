@@ -37,6 +37,7 @@ RECORD_FIELDS = [
     *[f"TireSlipAngle{w}" for w in ("FL", "FR", "RL", "RR")],
     *[f"WheelRotSpeed{w}" for w in ("FL", "FR", "RL", "RR")],
     *[f"TireTemp{w}" for w in ("FL", "FR", "RL", "RR")],
+    *[f"WheelInPuddle{w}" for w in ("FL", "FR", "RL", "RR")],
 ]
 
 
