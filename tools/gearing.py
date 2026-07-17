@@ -82,16 +82,22 @@ def analyze(rows):
             limiter[g] = limiter.get(g, 0) + 1
         prev_hit = hit
 
-    # Hochschalt-Drehzahlabfall: RPM kurz vor vs. kurz nach dem Hochschalten
+    # Hochschalt-Drehzahlabfall: RPM kurz vor vs. kurz nach dem Hochschalten.
+    # Forza zeigt beim Schalten kurz Gang 11 (= Leerlauf); wir überspringen ihn und
+    # erkennen den Wechsel vom letzten "echten" Gang auf den nächsthöheren.
+    NEUTRAL = 11
     upshifts = {}   # gang_von -> Liste (rpm_vor, rpm_nach)
-    for i in range(1, len(rows) - 6):
-        g0 = int(fnum(rows[i - 1], "Gear"))
-        g1 = int(fnum(rows[i], "Gear"))
-        if g1 == g0 + 1 and g0 >= 1:
-            rpm_before = fnum(rows[i - 1], "CurrentEngineRpm")
-            rpm_after = fnum(rows[i + 5], "CurrentEngineRpm")  # ~5 Ticks später, Gang eingerückt
+    last_real, last_idx = None, None
+    for i, r in enumerate(rows):
+        g = int(fnum(r, "Gear"))
+        if g == NEUTRAL or g <= 0:
+            continue
+        if last_real is not None and g == last_real + 1:
+            rpm_before = fnum(rows[last_idx], "CurrentEngineRpm")
+            rpm_after = fnum(rows[min(i + 5, len(rows) - 1)], "CurrentEngineRpm")
             if rpm_before > 0 and rpm_after > 0:
-                upshifts.setdefault(g0, []).append((rpm_before, rpm_after))
+                upshifts.setdefault(last_real, []).append((rpm_before, rpm_after))
+        last_real, last_idx = g, i
 
     # Kurvenausgang-Drehzahl: Moment, in dem nach einer Kurve Vollgas kommt
     exit_rpms = []

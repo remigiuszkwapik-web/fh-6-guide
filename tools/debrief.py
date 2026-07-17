@@ -124,6 +124,28 @@ def analyze(rows):
         spin_flags.append(spinning)
     spin_events = count_rising_edges(spin_flags)
 
+    # Diff-Diagnose: Beim KURVEN-Durchdrehen — dreht das kurveninnere oder -äußere
+    # Antriebsrad stärker durch? Inneres Rad = offenes/zu wenig gesperrtes Diff
+    # (Lock erhöhen); beide/äußeres = eher Grip-/Fahrstilthema.
+    # Steer > 0 = rechts → inneres Rad rechts (…R); Steer < 0 → inneres links (…L).
+    inner_spin = outer_spin = 0
+    rear = ("RL", "RR") if drivetrain != 0 else ("FL", "FR")  # RWD/AWD: Heck; FWD: Front
+    for r in rows:
+        if fnum(r, "Accel") <= SPIN_ACCEL:
+            continue
+        steer = fnum(r, "Steer")
+        if abs(steer) < 5:
+            continue  # nur echte Kurvenlage
+        sl = fnum(r, f"TireSlipRatio{rear[0]}")   # links
+        sr = fnum(r, f"TireSlipRatio{rear[1]}")   # rechts
+        if max(sl, sr) < SPIN_SLIP:
+            continue
+        inner, outer = (sr, sl) if steer > 0 else (sl, sr)
+        if inner > outer:
+            inner_spin += 1
+        else:
+            outer_spin += 1
+
     # Blockier-Events je Rad: SlipRatio stark negativ beim Bremsen
     lock_events = {}
     for w in WHEELS:
@@ -156,7 +178,7 @@ def analyze(rows):
         temps=temps, bottom_front=bottom_front, bottom_rear=bottom_rear,
         roll_front=roll_front, roll_rear=roll_rear,
         spin_events=spin_events, lock_events=lock_events, laps=laps,
-        duration_s=duration_s,
+        duration_s=duration_s, inner_spin=inner_spin, outer_spin=outer_spin,
     )
 
 
@@ -241,6 +263,21 @@ def format_report(a):
     lock_front = a["lock_events"]["FL"] + a["lock_events"]["FR"]
     lock_pm = lock_total * per_min
 
+    # Diff-Diagnose in Klartext
+    ins, outs = a["inner_spin"], a["outer_spin"]
+    tot = ins + outs
+    if tot < 8:
+        diff_line = "- Diff-Diagnose: zu wenig Kurven-Durchdrehen für ein Urteil."
+    elif ins >= 2 * outs:
+        diff_line = (f"- **Diff-Diagnose: kurveninneres Rad {ins} : {outs} äußeres** → Diff zu OFFEN "
+                     "unter Gas. **Beschleunigungssperre erhöhen** bringt Traktion zum belasteten Außenrad.")
+    elif outs >= 2 * ins:
+        diff_line = (f"- Diff-Diagnose: äußeres Rad {outs} : {ins} inneres → eher Grip-/Fahrstilthema, "
+                     "nicht mehr Sperre.")
+    else:
+        diff_line = (f"- Diff-Diagnose: inneres {ins} ~ äußeres {outs} → ausgewogen; Durchdrehen ist "
+                     "eher reine Leistung/Grip, nicht die Sperre.")
+
     return f"""# DEBRIEF-BERICHT (FH6)
 
 **Auto:** {a['drivetrain']} · PI {a['pi']} · {a['n']} Samples · {dur:.0f}s · Runden: {laptxt}
@@ -259,6 +296,7 @@ def format_report(a):
 - Federweg am Anschlag:  vorne **{a['bottom_front']:.0f}%** · hinten **{a['bottom_rear']:.0f}%**
 - Wank-Delta (L/R):      vorne `{a['roll_front']:.3f}` · hinten `{a['roll_rear']:.3f}`
 - Traktions-Events (Durchdrehen am Gas): **{a['spin_events']}**  (**{spin_pm:.0f}/min**)
+{diff_line}
 - Blockier-Events:  FL {a['lock_events']['FL']} · FR {a['lock_events']['FR']} · RL {a['lock_events']['RL']} · RR {a['lock_events']['RR']}  (gesamt **{lock_pm:.0f}/min**, davon Front {lock_front})
   - _Hinweis: Bei aktivem ABS sind das meist ABS-Regeleingriffe, KEIN echtes Blockieren — dann ignorieren._
 
